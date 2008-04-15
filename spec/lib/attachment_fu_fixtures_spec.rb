@@ -102,7 +102,7 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   end
 
   after(:all) do
-    FileUtils.rmdir(File.join(TEMP_DIR, '*'))
+    FileUtils.rmdir(Dir[File.join(TEMP_DIR, '**/*')])
   end
 
   it "should add the attachment and its thumbnails to the database" do
