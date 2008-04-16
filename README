@@ -1,4 +1,4 @@
-attachment_fu_fixtures
+attachment_fu_fixtures BETA
 ======================
 
 This plugin enables models that implement attachment_fu to also use fixtures. It
