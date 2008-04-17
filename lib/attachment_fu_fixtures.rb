@@ -15,7 +15,6 @@ module Mynyml
         assert_attachment_exists(full_path)
 
         require 'action_controller/test_process'
-        klass.destroy_all
         attachment = klass.new
         attachment.uploaded_data = ActionController::TestUploadedFile.new(full_path, mime_type)
         attachment.instance_variable_get(:@attributes)['id'] = fixture['id'] #pwn id

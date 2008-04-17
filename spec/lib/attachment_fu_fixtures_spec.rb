@@ -36,16 +36,32 @@ ActiveRecord::Migration.verbose = true
 # --------------------------------------------------
 # FIXTURES
 # --------------------------------------------------
-module Neverland
-  IMAGE_DIR = File.join(File.dirname(__FILE__), '../assets/')
-  IMAGE_FNAME = 'rails.png'
+module Neverland #namespace
+  # directory containing test attachment files
+  ATTACHMENT_DIR = File.join(File.dirname(__FILE__), '../assets/')
+
+  # note: make sure files appear in attachment dir!
+  # (manually declared in order to avoid susprises in specs)
+  #ATTACHMENT_FNAMES = %w[ rails.png railz.png ]
+
+  # full attachment file paths
+  # (manually declared in order to avoid susprises in specs)
+  # note: make sure files appear in attachment dir!
+  mattr_reader :attachments
+  #@@attachments = Dir[File.join(ATTACHMENT_DIR, '*')].sort
+  #@@attachments = ATTACHMENT_FNAMES.map {|name| File.join(ATTACHMENT_DIR, name) }
+  @@attachments = %w[ rails.png railz.png ].map {|name| File.join(ATTACHMENT_DIR, name) }
 
   mattr_reader :fixture_files
   @@fixture_files = {}
+
   @@fixture_files['images'] = %|
   peter:
-    attachment_file: #{File.join(IMAGE_DIR, IMAGE_FNAME)}
+    attachment_file: #{self.attachments[0]}
     product: clock
+  tinkerbell:
+    attachment_file: #{self.attachments[1]}
+    product: timer
   |
   @@fixture_files['products'] = %|
   clock:
@@ -53,6 +69,12 @@ module Neverland
     name: $LABEL
     qty: 100
     description: tick, tack
+  timer:
+    brand: asdf
+    name: $LABEL
+    qty: 2
+    description: tiny
+
   |
 end
 
@@ -105,20 +127,22 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
     FileUtils.rmdir(Dir[File.join(TEMP_DIR, '**/*')])
   end
 
-  it "should add the attachment and its thumbnails to the database" do
-    lambda { insert_data }.should change(Image, :count).by(2)
-    Image.find(:all).select(&:parent_id).should have(1).happythought
-    Image.find(:all).reject(&:parent_id).should have(1).happythought_too
+  it "should add the attachments and their thumbnails to the database" do
+    lambda { insert_data }.should change(Image, :count).by(4)
+    Image.find(:all).select(&:parent_id).should have(2).happythoughts
+    Image.find(:all).reject(&:parent_id).should have(2).happythoughts_too
   end
 
   it "should assign the right id to the record" do
     insert_data
     Image.find_by_filename('rails.png').id.should == data['images']['peter']['id']
+    Image.find_by_filename('railz.png').id.should == data['images']['tinkerbell']['id']
   end
 
   it "should properly build associations that include attachments" do
     insert_data
     Product.find_by_name('clock').image.id.should == data['images']['peter']['id']
+    Product.find_by_name('timer').image.id.should == data['images']['tinkerbell']['id']
   end
 
   it "should link attachment models to valid attachment files" do
@@ -126,6 +150,9 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
     File.exist?(Image.find_by_filename('rails.png').full_filename).should be_true
     File.exist?(Image.find_by_filename('rails.png').full_filename(:sample)).should be_true
     File.exist?(Image.find_by_filename('rails.png').full_filename(:hook!)).should_not be_true
+    File.exist?(Image.find_by_filename('railz.png').full_filename).should be_true
+    File.exist?(Image.find_by_filename('railz.png').full_filename(:sample)).should be_true
+    File.exist?(Image.find_by_filename('railz.png').full_filename(:hook!)).should_not be_true
   end
 
   it "should raise an exception if fixture file doesn't exist" do
@@ -165,8 +192,10 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   end
 
   def with_bad_image_path
-    orig = File.join(Neverland::IMAGE_DIR, Neverland::IMAGE_FNAME)
-    temp = File.join(TEMP_DIR, Neverland::IMAGE_FNAME)
+    #orig = File.join(Neverland::ASSETS_DIR, Neverland::IMAGE_FNAME)
+    #temp = File.join(TEMP_DIR, Neverland::IMAGE_FNAME)
+    orig = Neverland.attachments.first
+    temp = File.join(TEMP_DIR, File.basename(orig))
     FileUtils.mv(orig, temp)
     yield
     FileUtils.mv(temp, orig)
