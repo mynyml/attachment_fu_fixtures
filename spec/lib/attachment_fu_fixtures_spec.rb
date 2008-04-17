@@ -37,19 +37,14 @@ ActiveRecord::Migration.verbose = true
 # FIXTURES
 # --------------------------------------------------
 module Neverland #namespace
+
   # directory containing test attachment files
   ATTACHMENT_DIR = File.join(File.dirname(__FILE__), '../assets/')
-
-  # note: make sure files appear in attachment dir!
-  # (manually declared in order to avoid susprises in specs)
-  #ATTACHMENT_FNAMES = %w[ rails.png railz.png ]
 
   # full attachment file paths
   # (manually declared in order to avoid susprises in specs)
   # note: make sure files appear in attachment dir!
   mattr_reader :attachments
-  #@@attachments = Dir[File.join(ATTACHMENT_DIR, '*')].sort
-  #@@attachments = ATTACHMENT_FNAMES.map {|name| File.join(ATTACHMENT_DIR, name) }
   @@attachments = %w[ rails.png railz.png ].map {|name| File.join(ATTACHMENT_DIR, name) }
 
   mattr_reader :fixture_files

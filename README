@@ -32,7 +32,7 @@ Dependencies
 ============
 
 * Rick Olson's attachment_fu plugin
-* Rspec if you want to run the specs
+* Rspec and SQLite if you want to run the specs
 * Rails, etc.
 
 Examples
@@ -93,6 +93,7 @@ To run specs:
 
 * make sure rspec is installed
 * make sure attachment_fu is installed
+* make sure sqlite is installed
 * run from RAILS_ROOT with rake spec:plugins
 
 Contact
