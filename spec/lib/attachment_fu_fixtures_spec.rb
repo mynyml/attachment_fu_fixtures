@@ -8,7 +8,7 @@ require File.dirname(__FILE__) + '/../../../../../spec/spec_helper'
 #  http://github.com/rsl/stringex/tree/5aa45b8aeec2c0dd7d8f28af879d12e0b54b1bfe/test/acts_as_url_test.rb)
 ActiveRecord::Base.establish_connection(
   :adapter  => 'sqlite3',
-  :dbfile   => File.join(File.dirname(__FILE__), '../../db', 'mynymldb.sqlite3')
+  :dbfile   => File.join(File.dirname(__FILE__), '../../db', 'test.sqlite3')
 )
 ActiveRecord::Migration.verbose = false
 ActiveRecord::Schema.define(:version => 1) do
@@ -105,8 +105,6 @@ end
 # --------------------------------------------------
 # SPECS
 # --------------------------------------------------
-# TODO: spec guess_mime_type
-
 describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   TEMP_DIR = File.join(File.dirname(__FILE__), '../tmp/')
 
@@ -193,6 +191,7 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
     temp = File.join(TEMP_DIR, File.basename(orig))
     FileUtils.mv(orig, temp)
     yield
+  ensure
     FileUtils.mv(temp, orig)
   end
 end

@@ -7,7 +7,7 @@ module Mynyml
     # overrides the insertion to trigger some attachment_fu functionality before
     # it gets added to the db
     def insert_fixture_with_attachment(fixture, table_name)
-      if (klass = fixture.model_class) && klass.instance_methods.include?('uploaded_data=')
+      if klass = attachment_model?(fixture)
 
         fixture   = fixture.to_hash
         full_path = fixture.delete('attachment_file')
@@ -27,6 +27,11 @@ module Mynyml
     end
     
     private
+      def attachment_model?(fixture)
+        klass = fixture.model_class
+        (klass && klass.instance_methods.include?('uploaded_data=')) ? klass : nil
+      end
+
       # if content_type isn't specified, attempt to use file(1)
       # todo: confirm that `file` silently fails when not available
       # todo: test on win32
