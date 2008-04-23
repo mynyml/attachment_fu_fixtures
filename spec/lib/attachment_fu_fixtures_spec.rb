@@ -1,6 +1,15 @@
 require 'fileutils'
 require File.dirname(__FILE__) + '/../../../../../spec/spec_helper'
 
+Spec::Runner.configure do |config|
+  # we're testing fixture loading, which itself uses transactions, so
+  # transactional fixtures must be turned off to recreate true behaviour;
+  # creating the first fixture causes a begin_db_transaction request which
+  # seems to be the root of the ugly "SQL login error or missing database"
+  # problem.
+  config.use_transactional_fixtures = false
+end
+
 # --------------------------------------------------
 # SCHEMA
 # --------------------------------------------------
@@ -154,6 +163,23 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
         insert_data
       }.should raise_error(Mynyml::AttachmentFuFixtures::AttachmentFileNotFound)
     }
+  end
+
+  # Spec for error known to happen with SQLite3
+  # Related to transaction started in fixtures.rb, around line 517
+  #
+  #   connection.transaction(Thread.current['open_transactions'].to_i == 0) do
+  #     ...
+  #   end
+  #
+  # todo: test behaviour with other dbs
+  it "should recover from a 'SQL logic error or missing database' error" do
+
+    Thread.current['open_transactions'] = 0
+    lambda { insert_data }.should_not raise_error(SQLite3::SQLException)
+
+    Thread.current['open_transactions'] = 1
+    lambda { insert_data }.should_not raise_error(SQLite3::SQLException)
   end
 
   # --------------------------------------------------
