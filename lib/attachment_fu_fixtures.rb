@@ -19,9 +19,7 @@ module Mynyml
         attachment.uploaded_data = ActionController::TestUploadedFile.new(full_path, mime_type)
         attachment.instance_variable_get(:@attributes)['id'] = fixture['id'] #pwn id
         attachment.valid? #trigger validation for the callbacks
-        control_transaction do
-          attachment.send(:after_process_attachment) #manually call after_save callback
-        end
+        attachment.send(:after_process_attachment) #manually call after_save callback
 
         fixture = Fixture.new(attachment.attributes.update(fixture), klass)
       end
@@ -32,13 +30,6 @@ module Mynyml
       def attachment_model?(fixture)
         klass = fixture.model_class
         (klass && klass.instance_methods.include?('uploaded_data=')) ? klass : nil
-      end
-
-      # Prevents a problem known to happen with SQLite3 when thumbnails are created
-      # (raises a SQLite3::SQLException "SQL login error or missing database")
-      def control_transaction
-        yield
-      rescue SQLite3::SQLException
       end
 
       # if content_type isn't specified, attempt to use file(1)
@@ -57,4 +48,15 @@ module Mynyml
         end
       end
   end
+end
+
+# Prevents a problem known to happen with SQLite3 when thumbnails are created
+# (raises a SQLite3::SQLException "SQL login error or missing database")
+Technoweenie::AttachmentFu::InstanceMethods.module_eval do
+  def create_or_update_thumbnail_with_damage_control(*args,&block)
+    create_or_update_thumbnail_without_damage_control(*args,&block)
+  rescue SQLite3::SQLException, Exception
+    #puts "Exception Cought: #{$!.inspect}"
+  end
+  alias_method_chain :create_or_update_thumbnail, :damage_control
 end

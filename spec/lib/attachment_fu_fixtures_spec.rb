@@ -173,13 +173,21 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   #   end
   #
   # todo: test behaviour with other dbs
-  it "should recover from a 'SQL logic error or missing database' error" do
+  it "should recover if an exception is raised while creating thumbnails" do
 
     Thread.current['open_transactions'] = 0
-    lambda { insert_data }.should_not raise_error(SQLite3::SQLException)
+    lambda { insert_data }.should_not raise_error
 
     Thread.current['open_transactions'] = 1
-    lambda { insert_data }.should_not raise_error(SQLite3::SQLException)
+    lambda { insert_data }.should_not raise_error
+  end
+
+  # ensure proper recovery of above transaction error
+  it "should copy attachment files into the app" do
+    insert_data
+    Image.find(:all).each do |image|
+      File.exist?(image.public_filename).should be_true
+    end
   end
 
   # --------------------------------------------------
