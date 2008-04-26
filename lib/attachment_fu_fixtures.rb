@@ -1,7 +1,7 @@
 module Mynyml
+
   module AttachmentFuFixtures
-    class AttachmentFileNotFound < ArgumentError # :nodoc:
-    end
+    class AttachmentFileNotFound < ArgumentError; end # :nodoc:
 
     # In order to set model ids, fixtures are inserted manually. The following
     # overrides the insertion to trigger some attachment_fu functionality before
@@ -19,7 +19,9 @@ module Mynyml
         attachment.uploaded_data = ActionController::TestUploadedFile.new(full_path, mime_type)
         attachment.instance_variable_get(:@attributes)['id'] = fixture['id'] #pwn id
         attachment.valid? #trigger validation for the callbacks
-        attachment.send(:after_process_attachment) #manually call after_save callback
+        with_damage_control do
+          attachment.send(:after_process_attachment) #manually call after_save callback
+        end
 
         fixture = Fixture.new(attachment.attributes.update(fixture), klass)
       end
@@ -27,9 +29,25 @@ module Mynyml
     end
     
     private
+
       def attachment_model?(fixture)
         klass = fixture.model_class
         (klass && klass.instance_methods.include?('uploaded_data=')) ? klass : nil
+      end
+
+      # Prevents a problem known to happen with SQLite3 when thumbnails are created
+      # (raises a SQLite3::SQLException "SQL login error or missing database")
+      def with_damage_control
+        n = Thread.current['open_transactions']
+        Thread.current['open_transactions'] = 1
+        yield
+        Thread.current['open_transactions'] = n
+      end
+
+      def assert_attachment_exists(path)
+        unless path && File.exist?(path)
+          raise AttachmentFileNotFound, "Couldn't find attachment_file #{path}"
+        end
       end
 
       # if content_type isn't specified, attempt to use file(1)
@@ -41,22 +59,5 @@ module Mynyml
         type = `file #{path} -ib 2> /dev/null`.chomp
         type.blank? ? nil : type
       end
-
-      def assert_attachment_exists(path)
-        unless path && File.exist?(path)
-          raise AttachmentFileNotFound, "Couldn't find attachment_file #{path}"
-        end
-      end
   end
-end
-
-# Prevents a problem known to happen with SQLite3 when thumbnails are created
-# (raises a SQLite3::SQLException "SQL login error or missing database")
-Technoweenie::AttachmentFu::InstanceMethods.module_eval do
-  def create_or_update_thumbnail_with_damage_control(*args,&block)
-    create_or_update_thumbnail_without_damage_control(*args,&block)
-  rescue SQLite3::SQLException, Exception
-    #puts "Exception Cought: #{$!.inspect}"
-  end
-  alias_method_chain :create_or_update_thumbnail, :damage_control
 end

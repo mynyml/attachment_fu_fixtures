@@ -1,3 +1,5 @@
+#require 'rubygems'
+#require 'ruby-debug'
 require 'fileutils'
 require File.dirname(__FILE__) + '/../../../../../spec/spec_helper'
 
@@ -114,6 +116,8 @@ end
 # --------------------------------------------------
 # SPECS
 # --------------------------------------------------
+# todo: test with other dbs
+
 describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   TEMP_DIR = File.join(File.dirname(__FILE__), '../tmp/')
 
@@ -149,12 +153,11 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
 
   it "should link attachment models to valid attachment files" do
     insert_data
-    File.exist?(Image.find_by_filename('rails.png').full_filename).should be_true
-    File.exist?(Image.find_by_filename('rails.png').full_filename(:sample)).should be_true
-    File.exist?(Image.find_by_filename('rails.png').full_filename(:hook!)).should_not be_true
-    File.exist?(Image.find_by_filename('railz.png').full_filename).should be_true
-    File.exist?(Image.find_by_filename('railz.png').full_filename(:sample)).should be_true
-    File.exist?(Image.find_by_filename('railz.png').full_filename(:hook!)).should_not be_true
+    Product.find(:all).each do |product|
+      File.exist?(product.image.public_filename).should be_true
+      File.exist?(product.image.public_filename(:sample)).should be_true
+      File.exist?(product.image.public_filename(:hook)).should_not be_true
+    end
   end
 
   it "should raise an exception if fixture file doesn't exist" do
@@ -163,31 +166,6 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
         insert_data
       }.should raise_error(Mynyml::AttachmentFuFixtures::AttachmentFileNotFound)
     }
-  end
-
-  # Spec for error known to happen with SQLite3
-  # Related to transaction started in fixtures.rb, around line 517
-  #
-  #   connection.transaction(Thread.current['open_transactions'].to_i == 0) do
-  #     ...
-  #   end
-  #
-  # todo: test behaviour with other dbs
-  it "should recover if an exception is raised while creating thumbnails" do
-
-    Thread.current['open_transactions'] = 0
-    lambda { insert_data }.should_not raise_error
-
-    Thread.current['open_transactions'] = 1
-    lambda { insert_data }.should_not raise_error
-  end
-
-  # ensure proper recovery of above transaction error
-  it "should copy attachment files into the app" do
-    insert_data
-    Image.find(:all).each do |image|
-      File.exist?(image.public_filename).should be_true
-    end
   end
 
   # --------------------------------------------------
@@ -219,8 +197,6 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   end
 
   def with_bad_image_path
-    #orig = File.join(Neverland::ASSETS_DIR, Neverland::IMAGE_FNAME)
-    #temp = File.join(TEMP_DIR, Neverland::IMAGE_FNAME)
     orig = Neverland.attachments.first
     temp = File.join(TEMP_DIR, File.basename(orig))
     FileUtils.mv(orig, temp)
