@@ -19,7 +19,7 @@ module Mynyml
         attachment.uploaded_data = ActionController::TestUploadedFile.new(full_path, mime_type)
         attachment.instance_variable_get(:@attributes)['id'] = fixture['id'] #pwn id
         attachment.valid? #trigger validation for the callbacks
-        with_damage_control do
+        without_transaction do
           attachment.send(:after_process_attachment) #manually call after_save callback
         end
 
@@ -37,7 +37,7 @@ module Mynyml
 
       # Prevents a problem known to happen with SQLite3 when thumbnails are created
       # (raises a SQLite3::SQLException "SQL login error or missing database")
-      def with_damage_control
+      def without_transaction
         n = Thread.current['open_transactions']
         Thread.current['open_transactions'] = 1
         yield
