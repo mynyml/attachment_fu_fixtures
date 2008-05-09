@@ -114,7 +114,7 @@ To run specs:
 
 Contributions
 =============
-Thanks to Patrick Crosby for reporting the model_class bug on rails-2.0.2-gem
+Thanks to Patrick Crosby for submitting a patch for the model_class bug
 
 Contact
 =======

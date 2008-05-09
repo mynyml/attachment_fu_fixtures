@@ -80,7 +80,6 @@ module Neverland #namespace
     name: $LABEL
     qty: 2
     description: tiny
-
   |
 end
 
@@ -126,7 +125,11 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   end
 
   after(:each) do
-    Image.destroy_all
+    begin
+      Image.destroy_all
+    rescue
+      Image.delete_all
+    end
   end
 
   after(:all) do
@@ -161,11 +164,27 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   end
 
   it "should raise an exception if fixture file doesn't exist" do
-    with_bad_image_path {
+    with_bad_image_path do
       lambda {
         insert_data
       }.should raise_error(Mynyml::AttachmentFuFixtures::AttachmentFileNotFound)
-    }
+    end
+  end
+
+  it "should not raise an error when attachment_file is not specified" do
+    without_defined_attachment_files do
+      lambda {
+        insert_data
+      }.should_not raise_error(Mynyml::AttachmentFuFixtures::AttachmentFileNotFound)
+    end
+  end
+
+  it "should process models as normal fixtures when attachment_file if not specified" do
+    without_defined_attachment_files do
+      lambda { insert_data }.should change(Image, :count).by(2)
+    end
+    Image.find_by_filename('rails.png').should be_nil
+    Image.find_by_filename('railz.png').should be_nil
   end
 
   # --------------------------------------------------
@@ -203,5 +222,12 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
     yield
   ensure
     FileUtils.mv(temp, orig)
+  end
+
+  def without_defined_attachment_files
+    orig_fxs = Neverland.fixture_files['images'].dup
+    Neverland.fixture_files['images'].gsub!(/\n\s*attachment_file:.*$/, '')
+    yield
+    Neverland.fixture_files['images'] = orig_fxs
   end
 end
