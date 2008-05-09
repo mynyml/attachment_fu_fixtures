@@ -31,8 +31,15 @@ module Mynyml
     private
 
       def attachment_model?(fixture)
-        klass = fixture.respond_to?(:model_class) ? fixture.model_class : fixture.class_name
-        (klass && klass.instance_methods.include?('uploaded_data=')) ? klass : nil
+        klass =
+          if fixture.respond_to?(:model_class)
+            fixture.model_class
+          elsif fixture.class_name.is_a?(Class)
+            fixture.class_name
+          else
+            Object.const_get(fixture.class_name)
+          end
+        (klass && klass.instance_methods.include?('uploaded_data=') && !fixture['attachment_file'].nil?) ? klass : nil
       end
 
       # Prevents a problem known to happen with SQLite3 when thumbnails are created
