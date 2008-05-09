@@ -31,7 +31,7 @@ module Mynyml
     private
 
       def attachment_model?(fixture)
-        klass = fixture.model_class
+        klass = fixture.respond_to?(:model_class) ? fixture.model_class : fixture.class_name
         (klass && klass.instance_methods.include?('uploaded_data=')) ? klass : nil
       end
 
