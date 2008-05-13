@@ -1,6 +1,5 @@
 attachment_fu_fixtures
 ======================
-
 This plugin enables models that implement attachment_fu to also use fixtures. It
 processes and stores the attachment file as if it had being uploaded. Useful if
 you use fixtures in your tests/specs and want to test with real attachments,
@@ -22,7 +21,6 @@ the interface.
 
 Features
 ========
-
 * Parses and stores attachment files, just like any upload would
 * Seamless integration with existing fixtures
 * Extremely simple to use
@@ -30,14 +28,12 @@ Features
 
 Dependencies
 ============
-
 * Rick Olson's attachment_fu plugin
 * Rspec and SQLite if you want to run the specs
 * Rails, etc.
 
 Examples
 ========
-
 To use, all you have to do is add a fixture for the attachment with an
 'attachment_file' field, pointing to your attachment file. That's it!
 
@@ -60,8 +56,8 @@ harbour:
 
 To load the fixture data, cd to RAILS_ROOT and call
 
-  rake db:fixtures:load      #for Unit::Test
-  rake spec:db:fixtures:load #for RSpec
+  rake db:fixtures:load      #for test/fixtures
+  rake spec:db:fixtures:load #for spec/fixtures
 
 TIP: If you also use fixtures for tests/specs, I recommend you create a
 separate set of fixtures to use as seed data. You can store them in another
@@ -74,10 +70,8 @@ The examples above use rails 2.0 style fixtures. If you're a bit confused by
 how fixtures are written here (e.g. because they don't have ids, etc.), check
 out http://railscasts.com/episodes/81
 
-
 Installation
 ============
-
 If you're using edge rails from the github repository, you can install with the
 built in plugin installation command
 
@@ -91,14 +85,17 @@ Otherwise you can install manually with just a few steps
   o rename the extracted directory to attachment_fu_fixtures
   o delete the file you downloaded (you won't need it anymore)
 
-TIP: If you're on linux, here's the terminal command for the above steps
-(once you cd to your vendor/plugins directory, copy-pasting the whole line should work):
+TIP: If you're on linux, the terminal commands for the above steps are:
 
-    wget http://github.com/mynyml/attachment_fu_fixtures/tarball/master; tar zxvf mynyml-attachment_fu_fixtures-*.tar.gz; mv mynyml-attachment_fu_fixtures-*/ attachment_fu_fixtures; rm mynyml-attachment_fu_fixtures-*.tar.gz
+  from witin your vendor/plugins directory:
+
+  wget http://github.com/mynyml/attachment_fu_fixtures/tarball/master;
+  tar zxvf mynyml-attachment_fu_fixtures-*.tar.gz;
+  mv mynyml-attachment_fu_fixtures-*/ attachment_fu_fixtures;
+  rm mynyml-attachment_fu_fixtures-*.tar.gz
 
 Tests
 =====
-
 Tested with:
 
 * attachment_fu (r3179 and commit 3836c313d6)
@@ -118,7 +115,6 @@ Thanks to Patrick Crosby for submitting a patch for the model_class bug
 
 Contact
 =======
-
 If you have suggestions, comments, a patch, a git pull request, rants, doc
 fixes/improvements, etc., feel free to contact me: mynyml at gmail,
 irc.freenode.net #rubyonrails
