@@ -41,6 +41,27 @@ ActiveRecord::Schema.define(:version => 1) do
     t.text    :description
     t.timestamps
   end
+  create_table :gizmos, :force => true do |t|
+    t.string  :name
+    t.timestamps
+  end
+
+  # gizmos <=> images join table
+  create_table :gizmos_images, :force => true do |t|
+    t.integer :gizmo_id, :image_id
+  end
+
+  # STI
+  create_table :posts, :force => true do |t|
+    t.string :title
+  #sti attr
+    t.string :type
+    t.string :kind #alternative inheritance_column
+  #attachment_fu attrs
+    t.integer :size
+    t.string  :content_type
+    t.string  :filename
+  end
 end
 ActiveRecord::Migration.verbose = true
 
@@ -58,7 +79,7 @@ module Neverland #namespace
   mattr_reader :attachments
   @@attachments = %w[ rails.png railz.png ].map {|name| File.join(ATTACHMENT_DIR, name) }
 
-  mattr_reader :fixture_files
+  mattr_accessor :fixture_files
   @@fixture_files = {}
 
   @@fixture_files['images'] = %|
@@ -81,6 +102,39 @@ module Neverland #namespace
     qty: 2
     description: tiny
   |
+  @@fixture_files['gizmos'] = %|
+  foo:
+    name: $LABEL
+    images: peter, tinkerbell
+  bar:
+    name: $LABEL
+    images: peter
+  |
+
+  #STI fixtures
+  @@fixture_files['posts'] = %|
+  # posts:
+  first_post:
+    title: $LABEL
+    type: Post
+  other_post:
+    title: $LABEL
+    type: Post
+
+  # articles:
+  pirates:
+    type: Article
+  fairies:
+    type: Article
+
+  # documents:
+  treasure_map.odt:
+    type: Document
+    attachment_file: #{self.attachments[0]}
+  treasure_map.pdf:
+    type: Document
+    attachment_file: #{self.attachments[1]}
+  |
 end
 
 class String
@@ -102,6 +156,7 @@ end
 # --------------------------------------------------
 class Image < ActiveRecord::Base
   belongs_to :product
+  has_and_belongs_to_many :gizmos
   has_attachment :path_prefix   => File.join(File.dirname(__FILE__), '../tmp'),
                  :thumbnails    => {:sample => '100x100>'},
                  :storage       => :file_system
@@ -110,6 +165,20 @@ end
 
 class Product < ActiveRecord::Base
   has_one :image
+end
+
+class Gizmo < ActiveRecord::Base
+  has_and_belongs_to_many :images
+end
+
+# STI
+class Post < ActiveRecord::Base; end
+class Article < Post; end
+class Document < Post
+  has_attachment :path_prefix   => File.join(File.dirname(__FILE__), '../tmp'),
+                 :thumbnails    => {:sample => '100x100>'},
+                 :storage       => :file_system
+  validates_as_attachment
 end
 
 # --------------------------------------------------
@@ -133,7 +202,7 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
   end
 
   after(:all) do
-    FileUtils.rmdir(Dir[File.join(TEMP_DIR, '**/*')])
+    FileUtils.rm_rf(Dir[File.join(TEMP_DIR, '**/*')])
   end
 
   it "should add the attachments and their thumbnails to the database" do
@@ -185,6 +254,30 @@ describe "rake [spec:]db:fixtures:load handling attachment fixtures" do
     end
     Image.find_by_filename('rails.png').should be_nil
     Image.find_by_filename('railz.png').should be_nil
+  end
+
+  it "should handle HABTM relationships" do
+    insert_data
+    Gizmo.find_by_name('foo').images.map(&:filename).should include('rails.png','railz.png')
+    Gizmo.find_by_name('bar').images.map(&:filename).should include('rails.png')
+  end
+
+  it "should handle STI" do
+    insert_data
+    Document.find(:all).map(&:filename).should include('rails.png','railz.png')
+  end
+
+  it "should respect STI inheritance column" do
+    Neverland.fixture_files['posts'].gsub!(/type/,'kind')
+    #-----
+    lambda {
+      insert_data
+    }.should raise_error
+    #-----
+    Post.inheritance_column = 'kind'
+    lambda {
+      insert_data
+    }.should_not raise_error
   end
 
   # --------------------------------------------------

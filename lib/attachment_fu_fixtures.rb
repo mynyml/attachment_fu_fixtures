@@ -31,6 +31,10 @@ module Mynyml
     private
 
       def attachment_model?(fixture)
+        # HABTM join tables generate unnamed fixtures; skip them since they
+        # will not include attachments anyway (you'd use HM:T)
+        return false if fixture.nil? || fixture.class_name.nil?
+
         klass =
           if fixture.respond_to?(:model_class)
             fixture.model_class
@@ -38,7 +42,14 @@ module Mynyml
             fixture.class_name
           else
             Object.const_get(fixture.class_name)
+            #fixture.class_name.camelize.constantize
           end
+
+        # resolve real class if we have an STI model
+        if k = fixture[klass.inheritance_column]
+          klass = k.camelize.constantize
+        end
+
         (klass && klass.instance_methods.include?('uploaded_data=') && !fixture['attachment_file'].nil?) ? klass : nil
       end
 

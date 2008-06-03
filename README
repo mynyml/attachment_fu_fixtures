@@ -111,7 +111,8 @@ To run specs:
 
 Contributions
 =============
-Thanks to Patrick Crosby for submitting a patch for the model_class bug
+- Thanks to Patrick Crosby for submitting a patch for the model_class bug
+- Thanks to Jeff Webb for patching HABTM and STI handling
 
 Contact
 =======
