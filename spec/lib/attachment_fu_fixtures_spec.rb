@@ -1,5 +1,12 @@
-#require 'rubygems'
-#require 'ruby-debug'
+RAILS_GEM_VERSION = ENV['RAILS_GEM_VERSION'] unless ENV['RAILS_GEM_VERSION'].nil?
+
+begin
+  require 'rubygems'
+  require 'ruby-debug'
+rescue LoadError
+  # pass
+end
+
 require 'fileutils'
 require File.dirname(__FILE__) + '/../../../../../spec/spec_helper'
 

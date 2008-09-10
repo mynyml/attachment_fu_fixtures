@@ -56,10 +56,10 @@ module Mynyml
       # Prevents a problem known to happen with SQLite3 when thumbnails are created
       # (raises a SQLite3::SQLException "SQL login error or missing database")
       def without_transaction
-        n = Thread.current['open_transactions']
-        Thread.current['open_transactions'] = 1
+        m = ActiveRecord::Transactions.instance_method(:transaction)
+        ActiveRecord::Transactions.module_eval %( def transaction; yield; end )
         yield
-        Thread.current['open_transactions'] = n
+        ActiveRecord::Transactions.send(:define_method, :transaction, m)
       end
 
       def assert_attachment_exists(path)
